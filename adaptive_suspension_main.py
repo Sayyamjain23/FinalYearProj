@@ -13,8 +13,8 @@ from collections import deque
 import time
 
 # Import your existing modules
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(PROJECT_ROOT)
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(PROJECT_ROOT, 'src'))
 
 from pothole_detector import PotholeDetector
 from midas.midas_utils import MiDaSDepthEstimator
@@ -68,11 +68,12 @@ class AdaptiveSuspensionSystem:
             camera_config.get('focal_length', camera_config['width'])
         )
         
+        dist_coeffs = np.zeros((4, 1))  # No distortion assumed
         self.distance_estimator = IPMDistanceEstimator(
-            camera_matrix=K,
-            dist_coeffs=None,  # Add distortion coefficients if available
-            camera_height=camera_config['camera_height'],
-            pitch_angle=camera_config['pitch_angle']
+            K,
+            dist_coeffs,
+            camera_config['camera_height'],
+            camera_config['pitch_angle']
         )
         print("✓ Distance estimator initialized")
         
@@ -302,9 +303,9 @@ def main():
     camera_config = {
         'width': 640,
         'height': 384,
-        'focal_length': 500,  # pixels (estimate, needs calibration)
-        'camera_height': 1.2,  # meters above ground
-        'pitch_angle': 15,  # degrees down from horizontal
+        'focal_length': 640,  # pixels (update with your calibrated value)
+        'camera_height': 1.2,  # meters above ground (measure your setup)
+        'pitch_angle': 15,  # degrees down from horizontal (measure your setup)
         'fps': 30
     }
     
@@ -346,7 +347,7 @@ def main():
         frame_times.append(frame_time)
         fps = 1.0 / np.mean(frame_times) if frame_times else 0
         
-        if self.frame_id % 30 == 0:
+        if system.frame_id % 30 == 0:
             print(f"FPS: {fps:.1f}")
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
